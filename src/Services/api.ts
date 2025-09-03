@@ -1,6 +1,13 @@
 // Services/api.ts
 import axios from "axios";
 import type { AxiosError, AxiosRequestConfig } from "axios"; // <- IMPORT DE TIPO
+import UseDisconnectContext from "./DisconnectContext/UseDisconnectContext";
+
+let onDisconnect: (() => void) | null = null;
+
+export function setOnDisconnect(cb: () => void) {
+  onDisconnect = cb;
+}
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
@@ -59,9 +66,9 @@ api.interceptors.response.use(
         // não tem refresh -> desloga
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        window.location.href = "/";
+        // window.location.href = "/";
+        if (onDisconnect) onDisconnect(); // <- chama callback
 
-        
         return Promise.reject(error);
       }
 
@@ -95,7 +102,10 @@ api.interceptors.response.use(
 
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        window.location.href = "/";
+        if (onDisconnect) onDisconnect(); // <- chama callback
+
+        // window.location.href = "/";
+        // setDisconnected(true);
         return Promise.reject(err);
       }
     }
